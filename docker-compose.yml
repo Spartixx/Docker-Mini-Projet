@@ -7,13 +7,37 @@ services:
     networks:
       - backend # Redis should not be exposed and talk with other containers through this private docker network.
 
+  postgres:
+    image: postgres:18-alpine
+    networks: 
+      - backend
+    volumes:
+      - pgdata:/var/lib/postgresql
+    env_file:
+      - .env
+
+  result:
+    build:
+      context: result
+      target: dev
+    networks:
+      - backend
+    depends_on:
+      postgres:
+        condition: service_started
+    ports:
+      - "8888:8888"
+    env_file:
+      - result/.env
+
   vote:
     build:
       context: vote
     env_file:
       - vote/.env
     depends_on:
-      - redis
+      redis: 
+        condition: service_started
     ports:
       - "8000:8080" # This service is exposed through port 8000 to be accessible for users.
     networks:
@@ -24,3 +48,4 @@ networks:
 
 volumes:
   redis_data: # Create a volume for redis queue. If redis is stopped while there are still votes in queue, it will be restart using this queue.
+  pgdata:
