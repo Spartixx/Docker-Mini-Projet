@@ -1,0 +1,26 @@
+services:
+  redis:
+    image: valkey/valkey:9.1.3-alpine # An open source fork of redis.
+    command: ["valkey-server", "--appendonly", "yes"] # Persist votes to the queue
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend # Redis should not be exposed and talk with other containers through this private docker network.
+
+  vote:
+    build:
+      context: vote
+    env_file:
+      - vote/.env
+    depends_on:
+      - redis
+    ports:
+      - "8000:8080" # This service is exposed through port 8000 to be accessible for users.
+    networks:
+      - backend # This service need to talk to redis, this is done through this network.
+
+networks:
+  backend: # Create a network with default parameters.
+
+volumes:
+  redis_data: # Create a volume for redis queue. If redis is stopped while there are still votes in queue, it will be restart using this queue.
