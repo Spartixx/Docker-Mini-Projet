@@ -10,23 +10,36 @@ services:
   postgres:
     image: postgres:18-alpine
     networks: 
-      - backend
+      - backend # Needed to talk to the worker through this network.
     volumes:
-      - pgdata:/var/lib/postgresql
+      - pgdata:/var/lib/postgresql # Postgres 18 does not use /data anymore
     env_file:
-      - .env
+      - .env # Needed for postgres DATABASE, USERNAME and PASSWORD information.
+
+  worker:
+    build:
+      context: worker
+    networks:
+      - backend # To talk to redis and postgres through this network.
+    env_file:
+      - .env # Need postgres connection variables.
+    depends_on: # It depends on only of redis and postgres: It can still work even if vote app or result is down: it dequeues redis vote and write to postgres
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_started
 
   result:
     build:
       context: result
-      target: dev
+      target: dev # This must be changed in the production docker-compose
     networks:
-      - backend
+      - backend # Needed to talk with redis
     depends_on:
       postgres:
         condition: service_started
     ports:
-      - "8888:8888"
+      - "8888:8888" # To expose the container: it is accessible using the port 8888 and binds to port 8888 of the container ( which serves the app )
     env_file:
       - result/.env
 
