@@ -16,7 +16,7 @@ app.logger.setLevel(logging.INFO)
 
 def get_redis():
     if not hasattr(Flask, 'redis'):
-        Flask.redis = Redis(host="localhost", db=0, socket_timeout=5)
+        Flask.redis = Redis(host="redis", db=0, socket_timeout=5)
     return Flask.redis
 
 @app.route("/", methods=['POST', 'GET'])
@@ -43,6 +43,3 @@ def hello():
     ))
     resp.set_cookie('voter_id', voter_id)
     return resp
-
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=8080, debug=True, threaded=True)
