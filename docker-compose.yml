@@ -22,7 +22,7 @@ services:
     networks:
       - backend # To talk to redis and postgres through this network.
     env_file:
-      - .env # Need postgres connection variables.
+      - .env.example # Need postgres connection variables.
     depends_on: # It depends on only of redis and postgres: It can still work even if vote app or result is down: it dequeues redis vote and write to postgres
       redis:
         condition: service_started
@@ -41,13 +41,13 @@ services:
     ports:
       - "8888:8888" # To expose the container: it is accessible using the port 8888 and binds to port 8888 of the container ( which serves the app )
     env_file:
-      - result/.env
+      - result/.env.example
 
   vote:
     build:
       context: vote
     env_file:
-      - vote/.env
+      - vote/.env.example
     depends_on:
       redis: 
         condition: service_started
