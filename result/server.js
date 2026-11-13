@@ -8,6 +8,7 @@ let express = require("express"),
   app = express(),
   server = require("http").Server(app),
   io = require("socket.io")(server)
+  require("dotenv").config();
 
 io.set("transports", ["polling"])
 
@@ -23,11 +24,11 @@ io.sockets.on("connection", function (socket) {
 })
 
 const pool = new pg.Pool({
-  connectionString: "postgres://postgres:postgres@postgres:5432/postgres",
+  connectionString: `${process.env.DATABASE_URL}`
 })
 
 async.retry(
-  {times: 1000, interval: 1000},
+  {times: 1000, interval: 100},
   function (callback) {
     pool.connect(function (err, client, done) {
       if (err) {
