@@ -1,0 +1,67 @@
+services:
+  redis:
+    image: valkey/valkey:9.1.3-alpine # An open source fork of redis.
+    command: ["valkey-server", "--appendonly", "yes"] # Persist votes to the queue
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend # Redis should not be exposed and talk with other containers through this private docker network.
+
+  postgres:
+    image: postgres:18-alpine
+    networks: 
+      - backend # Needed to talk to the worker through this network.
+    volumes:
+      - pgdata:/var/lib/postgresql # Postgres 18 does not use /data anymore
+    environment:
+       POSTGRES_USER: ${POSTGRES_USER}
+       POSTGRES_DB: ${POSTGRES_DB}
+       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+  worker:
+    image: elasad0306/worker:1.0
+    networks:
+      - backend # To talk to redis and postgres through this network.
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on: # It depends on only of redis and postgres: It can still work even if vote app or result is down: it dequeues redis vote and write to postgres
+      - redis
+      - postgres
+    deploy:
+      replicas: 3
+
+  result:
+    image: elasad0306/result:1.0.1
+    networks:
+      - backend # Needed to talk with redis
+    depends_on:
+      - postgres
+    ports:
+      - "8888:8888" # To expose the container: it is accessible using the port 8888 and binds to port 8888 of the container ( which serves the app )
+    environment:
+      NODE_ENV: production
+    deploy:
+      replicas: 3
+
+  vote:
+    image: elasad0306/vote:1.0
+    environment:
+      WORKERS: 2
+    depends_on:
+      - rediss
+    ports:
+      - "8000:8080" # This service is exposed through port 8000 to be accessible for users.
+    networks:
+      - backend # This service need to talk to redis, this is done through this network.
+    deploy:
+      replicas: 3
+
+networks:
+  backend: # Create a network with default parameters.
+    driver: overlay
+
+volumes:
+  redis_data: # Create a volume for redis queue. If redis is stopped while there are still votes in queue, it will be restart using this queue.
+  pgdata:
