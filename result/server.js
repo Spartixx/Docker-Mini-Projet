@@ -10,7 +10,7 @@ let express = require("express"),
   io = require("socket.io")(server)
   require("dotenv").config();
 
-io.set("transports", ["polling"])
+  io.set("transports", ["polling"])
 
 const port = 8888
 

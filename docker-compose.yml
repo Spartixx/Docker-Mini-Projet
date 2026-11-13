@@ -14,7 +14,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql # Postgres 18 does not use /data anymore
     env_file:
-      - .env # Needed for postgres DATABASE, USERNAME and PASSWORD information.
+      - .env.example # Needed for postgres DATABASE, USERNAME and PASSWORD information.
 
   worker:
     build:
